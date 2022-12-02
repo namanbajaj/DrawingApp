@@ -8,14 +8,11 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Color
 import android.media.MediaScannerConnection
+import android.net.Uri
 import android.os.Bundle
 import android.view.View
 import android.view.WindowManager
-import android.widget.FrameLayout
-import android.widget.ImageButton
-import android.widget.ImageView
-import android.widget.LinearLayout
-import android.widget.Toast
+import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
@@ -154,6 +151,14 @@ class MainActivity : AppCompatActivity() {
                 val flDrawingView = findViewById<FrameLayout>(R.id.fl_view_container)
                 shareDrawing(getBitmapFromView(flDrawingView))
             }
+        }
+
+        // privacy policy
+        val privacypolicy = findViewById<TextView>(R.id.privacy_policy)
+        privacypolicy.setOnClickListener{
+            val intent = Intent(android.content.Intent.ACTION_VIEW)
+            intent.data = Uri.parse("https://sites.google.com/view/drawing-app-policy-privacy/home  ")
+            startActivity(intent)
         }
     }
 
