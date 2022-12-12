@@ -4,8 +4,10 @@ import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
 import android.util.TypedValue
+import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
 import android.view.View
+import android.widget.Toast
 
 class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) {
     private var drawPath : CustomPath? = null
