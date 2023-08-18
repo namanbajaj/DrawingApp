@@ -12,11 +12,13 @@ import android.media.MediaScannerConnection
 import android.net.Uri
 import android.os.Bundle
 import android.provider.MediaStore
+import android.util.Log
 import android.view.HapticFeedbackConstants
 import android.view.View
 import android.view.WindowManager
 import android.widget.*
 import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
@@ -37,45 +39,22 @@ class MainActivity : AppCompatActivity() {
 
     var progressDialog: Dialog? = null
 
-    val openGalleryLauncher: ActivityResultLauncher<Intent> =
-        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
-            if (result.resultCode == RESULT_OK && result.data != null) {
-                val imageBackground: ImageView = findViewById(R.id.iv_background)
-                imageBackground.setImageURI(result.data?.data)
-                Toast.makeText(
-                    this,
-                    "Long press icon to return to white background",
-                    Toast.LENGTH_SHORT
-                ).show()
-            }
+    // Registers a photo picker activity launcher in single-select mode.
+    val pickMedia = registerForActivityResult(ActivityResultContracts.PickVisualMedia()) { uri ->
+        // Callback is invoked after the user selects a media item or closes the
+        // photo picker.
+        if (uri != null) {
+            val imageBackground: ImageView = findViewById(R.id.iv_background)
+            imageBackground.setImageURI(uri)
+            Toast.makeText(
+                this,
+                "Long press icon to return to white background",
+                Toast.LENGTH_SHORT
+            ).show()
+        } else {
+            Toast.makeText(this, "Error with opening Photo Picker", Toast.LENGTH_SHORT)
         }
-
-    val requestPermission: ActivityResultLauncher<Array<String>> =
-        registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
-            var allGranted = true
-            permissions.entries.forEach {
-                val (permission, granted) = it
-                if (!granted) {
-//                        Toast.makeText(this, "$permission denied", Toast.LENGTH_SHORT).show()
-                    if (permission == Manifest.permission.READ_EXTERNAL_STORAGE) {
-                        Toast.makeText(
-                            this@MainActivity,
-                            "You need to grant permission to read external storage to load images",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                        allGranted = false
-                        finish()
-                    }
-                }
-            }
-            if (allGranted) {
-                val pickIntent = Intent(
-                    Intent.ACTION_PICK,
-                    android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI
-                )
-                openGalleryLauncher.launch(pickIntent)
-            }
-        }
+    }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -150,7 +129,7 @@ class MainActivity : AppCompatActivity() {
         val eraseButton = findViewById<ImageButton>(R.id.eraserbtn)
         eraseButton.setOnClickListener {
             this.drawingView!!.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-            drawingView?.setBrushColor("#FFFFFF")
+            drawingView?.toggleErase();
             eraseButton.setImageDrawable(
                 ContextCompat.getDrawable(
                     this@MainActivity,
@@ -161,11 +140,11 @@ class MainActivity : AppCompatActivity() {
             currentPaintColor = eraseButton
         }
 
-        // permissions
+        // set background image
         val ibGallery = findViewById<ImageButton>(R.id.ib_image)
         ibGallery.setOnClickListener {
             this.drawingView!!.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
-            requestStoragePermissions()
+            pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
         }
         ibGallery.setOnLongClickListener {
             this.drawingView!!.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
@@ -252,7 +231,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     fun paintClicked(view: View) {
-//        Toast.makeText(this, "Paint clicked", Toast.LENGTH_SHORT).show()
         this.drawingView!!.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
         if (view !== currentPaintColor) {
             val imageButton = view as ImageButton
@@ -264,37 +242,6 @@ class MainActivity : AppCompatActivity() {
                 currentPaintColor = view
             }
         }
-    }
-
-    private fun requestStoragePermissions() {
-        if (ActivityCompat.shouldShowRequestPermissionRationale(this, Manifest.permission.READ_EXTERNAL_STORAGE)) {
-            showRationalDialog(
-                "Drawing App",
-                "You need to grant permission to read external storage to load images"
-            )
-        } else {
-            requestPermission.launch(arrayOf(
-                    Manifest.permission.READ_EXTERNAL_STORAGE,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                )
-            )
-        }
-    }
-
-    private fun showRationalDialog(title: String, message: String) {
-        AlertDialog.Builder(this)
-            .setTitle(title)
-            .setMessage(message)
-            .setPositiveButton("OK") { dialog, which ->
-                try {
-                    dialog.dismiss()
-                } catch (e: Exception) {
-                    e.printStackTrace()
-                }
-            }
-            .setNegativeButton("Cancel") { dialog, which ->
-                dialog.dismiss()
-            }.show()
     }
 
     private fun getBitmapFromView(v: View): Bitmap {
@@ -367,12 +314,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun showProgressDialog() {
         progressDialog = Dialog(this@MainActivity)
-
-        /*Set the screen content from a layout resource.
-        The resource will be inflated, adding all top-level views to the screen.*/
         progressDialog?.setContentView(R.layout.dialog_custom_progress)
-
-        //Start the dialog and display it on screen.
         progressDialog?.show()
     }
 
@@ -382,51 +324,4 @@ class MainActivity : AppCompatActivity() {
             progressDialog = null
         }
     }
-
-    private suspend fun shareDrawing(bitmap: Bitmap): String {
-        var result = ""
-        withContext(Dispatchers.IO) {
-            if (bitmap != null) {
-                try {
-                    val bytes = ByteArrayOutputStream()
-                    bitmap.compress(Bitmap.CompressFormat.PNG, 90, bytes)
-
-                    val f =
-                        File(externalCacheDir?.absoluteFile.toString() + File.separator + "DrawingApp_" + System.currentTimeMillis() / 1000 + ".jpg")
-
-                    val fo = FileOutputStream(f)
-                    fo.write(bytes.toByteArray())
-                    fo.close()
-                    result = f.absolutePath
-                    runOnUiThread {
-                        cancelProgressDialog()
-                        if (!result.isEmpty()) {
-                            shareImage(result)
-                        } else {
-                        }
-                    }
-
-                    val file = File(result)
-                    if (file.exists()) {
-                        file.delete()
-                    }
-                } catch (e: Exception) {
-                    result = ""
-                    e.printStackTrace()
-                }
-            }
-        }
-        return result
-    }
-
-    private fun shareImage(result: String) {
-        MediaScannerConnection.scanFile(this@MainActivity, arrayOf(result), null) { path, uri ->
-            val shareIntent = Intent()
-            shareIntent.action = Intent.ACTION_SEND
-            shareIntent.putExtra(Intent.EXTRA_STREAM, uri)
-            shareIntent.type = "image/png"
-            startActivity(Intent.createChooser(shareIntent, "Share"))
-        }
-    }
-
 }

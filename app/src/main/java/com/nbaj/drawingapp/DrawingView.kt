@@ -3,6 +3,7 @@ package com.nbaj.drawingapp
 import android.content.Context
 import android.graphics.*
 import android.util.AttributeSet
+import android.util.Log
 import android.util.TypedValue
 import android.view.HapticFeedbackConstants
 import android.view.MotionEvent
@@ -19,6 +20,7 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
     private var canvas : Canvas? = null
     private val paths = ArrayList<CustomPath>()
     private val undoPaths = ArrayList<CustomPath>()
+    private var isErasing: Boolean = false;
 
     init {
         setUpDrawing()
@@ -112,6 +114,11 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
 
     fun setBrushColor(newColor : String){
         color = Color.parseColor(newColor)
+        drawPaint!!.color = color
+    }
+
+    fun toggleErase() {
+        color = Color.WHITE
         drawPaint!!.color = color
     }
 
