@@ -38,6 +38,12 @@ class DrawingView(context: Context, attrs: AttributeSet) : View(context, attrs) 
         }
     }
 
+    fun clear() {
+        paths.clear()
+        undoPaths.clear()
+        invalidate()
+    }
+
     private fun setUpDrawing() {
         drawPath = CustomPath(color, brushSize)
         drawPaint = Paint()

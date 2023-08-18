@@ -138,7 +138,7 @@ class MainActivity : AppCompatActivity() {
 
             })
             cd.title = "Choose a color"
-            cd.tabIndex = ColorDialog.TabIndex.PALETTE
+            cd.tabIndex = ColorDialog.TabIndex.RGB
             cd.initialColor = initial
             cd.margins = 8
             cd.backgroundColor = Color.WHITE
@@ -198,6 +198,25 @@ class MainActivity : AppCompatActivity() {
                 val flDrawingView = findViewById<FrameLayout>(R.id.fl_view_container)
                 saveDrawing(getBitmapFromView(flDrawingView))
             }
+        }
+
+        // clear canvas
+        val ibClear = findViewById<ImageButton>(R.id.ib_clear)
+        ibClear.setOnClickListener {
+            this.drawingView!!.performHapticFeedback(HapticFeedbackConstants.VIRTUAL_KEY)
+            // create pop up to ask for confirmation
+            val builder = AlertDialog.Builder(this)
+            builder.setTitle("Clear Canvas")
+            builder.setMessage("Are you sure you want to clear the canvas?")
+            builder.setPositiveButton("Yes") { dialog, which ->
+                this@MainActivity.drawingView!!.performHapticFeedback(HapticFeedbackConstants.CONFIRM)
+                drawingView?.clear()
+            }
+            builder.setNegativeButton("No") { dialog, which ->
+                this@MainActivity.drawingView!!.performHapticFeedback(HapticFeedbackConstants.REJECT)
+                dialog.dismiss()
+            }
+            builder.show()
         }
 
         // privacy policy

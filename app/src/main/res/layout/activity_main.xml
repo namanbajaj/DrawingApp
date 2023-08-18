@@ -216,6 +216,16 @@
             android:layout_marginLeft="10dp"
             />
 
+        <ImageButton
+            android:id="@+id/ib_clear"
+            android:layout_width="30dp"
+            android:layout_height="30dp"
+            android:layout_marginBottom="5dp"
+            android:background="@drawable/clean"
+            android:scaleType="fitXY"
+            android:layout_marginLeft="10dp"
+            />
+
     </LinearLayout>
 
     <Button
