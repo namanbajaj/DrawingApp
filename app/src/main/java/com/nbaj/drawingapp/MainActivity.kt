@@ -279,7 +279,9 @@ class MainActivity : AppCompatActivity() {
                     )
                     if (uri != null) {
                         val outputStream = this@MainActivity.contentResolver.openOutputStream(uri)
-                        bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                        if (outputStream != null) {
+                            bitmap.compress(Bitmap.CompressFormat.PNG, 100, outputStream)
+                        }
                         outputStream!!.close()
 
                         values.put(MediaStore.Images.Media.IS_PENDING, false)
